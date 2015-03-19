@@ -64,14 +64,15 @@ angular.module('dynform', [])
           model = null;
         
         //  Check that the required attributes are in place
-        if (angular.isDefined(attrs.ngModel) && (angular.isDefined(attrs.template) || angular.isDefined(attrs.templateUrl)) && !element.hasClass('dynamic-form')) {
+        if (angular.isDefined(attrs.ngModel) && (angular.isDefined(attrs.template) || angular.isDefined(attrs.templateUrl) || angular.isDefined(attrs.templatePromise)) && !element.hasClass('dynamic-form')) {
           model = $parse(attrs.ngModel)($scope);
           //  Grab the template. either from the template attribute, or from the URL in templateUrl
-          (attrs.template ? $q.when($parse(attrs.template)($scope)) :
+          (attrs.templatePromise ? $q.when($parse(attrs.templatePromise)($scope).promise) :
+            (attrs.template ? $q.when($parse(attrs.template)($scope)) :
             $http.get(attrs.templateUrl, {cache: $templateCache}).then(function (result) {
               return result.data;
             })
-          ).then(function (template) {
+          )).then(function (template) {
             var setProperty = function (obj, props, value, lastProp, buildParent) {
               props = props.split('.');
               lastProp = lastProp || props.pop();
