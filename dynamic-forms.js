@@ -48,7 +48,10 @@ angular.module('dynform', [])
         'image': {element: 'input', type: 'image', editable: false, textBased: false},
         'legend': {element: 'legend', editable: false, textBased: false},
         'reset': {element: 'button', type: 'reset', editable: false, textBased: false},
-        'submit': {element: 'button', type: 'submit', editable: false, textBased: false}
+        'submit': {element: 'button', type: 'submit', editable: false, textBased: false},
+        // PhEMA custom editables
+        'valueSet': {element: 'value-sets', type: 'valueSet', editable: true, textBased: false},
+        'result': {element: 'results', type: 'result', editable: true, textBased: false}
       };
     
     return {
@@ -64,14 +67,15 @@ angular.module('dynform', [])
           model = null;
         
         //  Check that the required attributes are in place
-        if (angular.isDefined(attrs.ngModel) && (angular.isDefined(attrs.template) || angular.isDefined(attrs.templateUrl)) && !element.hasClass('dynamic-form')) {
+        if (angular.isDefined(attrs.ngModel) && (angular.isDefined(attrs.template) || angular.isDefined(attrs.templateUrl) || angular.isDefined(attrs.templatePromise)) && !element.hasClass('dynamic-form')) {
           model = $parse(attrs.ngModel)($scope);
           //  Grab the template. either from the template attribute, or from the URL in templateUrl
-          (attrs.template ? $q.when($parse(attrs.template)($scope)) :
+          (attrs.templatePromise ? $q.when($parse(attrs.templatePromise)($scope).promise) :
+            (attrs.template ? $q.when($parse(attrs.template)($scope)) :
             $http.get(attrs.templateUrl, {cache: $templateCache}).then(function (result) {
               return result.data;
             })
-          ).then(function (template) {
+          )).then(function (template) {
             var setProperty = function (obj, props, value, lastProp, buildParent) {
               props = props.split('.');
               lastProp = lastProp || props.pop();
@@ -268,7 +272,11 @@ angular.module('dynform', [])
                     newElement = workingElement;
                   }
                 }
-                
+                else if (field.type === 'valueSet') {
+                  newElement.attr('location', 'input');
+                  newElement.attr('selected-value-sets', bracket(field.model, attrs.ngModel));
+                }
+
                 //  Common attributes; radio already applied these...
                 if (field.type !== "radio") {
                   if (angular.isDefined(field['class'])) {newElement.attr('ng-class', field['class']);}
